@@ -38,9 +38,12 @@ fun VaultsView(
                     drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     VaultList(
+                        api = api,
                         state = state.vaultListState,
                         vaults = vaults,
                         onChangeVaults = onChangeVaults,
+                        unlockedVaults = unlockedVaults,
+                        onChangeUnlockedVaults = onChangeUnlockedVaults,
                         selectedVault = state.selected,
                         onChangeSelectedVault = { index ->
                             state.selected = index
@@ -72,9 +75,12 @@ fun VaultsView(
                     drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     VaultList(
+                        api = api,
                         state = state.vaultListState,
                         vaults = vaults,
                         onChangeVaults = onChangeVaults,
+                        unlockedVaults = unlockedVaults,
+                        onChangeUnlockedVaults = onChangeUnlockedVaults,
                         selectedVault = state.selected,
                         onChangeSelectedVault = { index ->
                             state.selected = index

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,14 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
-import de.fabiexe.spind.composeapp.generated.resources.Res
-import de.fabiexe.spind.composeapp.generated.resources.VaultsView_title
+import de.fabiexe.spind.api.SpindApi
+import de.fabiexe.spind.composeapp.generated.resources.*
+import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
 import de.fabiexe.spind.isMobileScreen
 import org.jetbrains.compose.resources.stringResource
 
 enum class VaultListDialog {
-    Add, Edit, Remove
+    Add, Edit, Remove, ChangePassword
 }
 
 @Stable
@@ -31,13 +33,17 @@ class VaultListState {
     val scrollState = ScrollState(0)
     var dialog by mutableStateOf<VaultListDialog?>(null)
     var vaultEditDialogState by mutableStateOf<VaultEditDialogState?>(null)
+    var vaultChangePasswordDialogState by mutableStateOf<VaultChangePasswordDialogState?>(null)
 }
 
 @Composable
 fun VaultList(
+    api: SpindApi,
     state: VaultListState,
     vaults: List<Vault>,
     onChangeVaults: suspend (List<Vault>) -> Unit,
+    unlockedVaults: List<UnlockedVault>,
+    onChangeUnlockedVaults: suspend (List<UnlockedVault>) -> Unit,
     selectedVault: Int?,
     onChangeSelectedVault: (Int?) -> Unit
 ) {
@@ -54,6 +60,7 @@ fun VaultList(
             for ((index, vault) in vaults.withIndex()) {
                 val interactionSource = remember { MutableInteractionSource() }
                 val hovered by interactionSource.collectIsHoveredAsState()
+                val isUnlocked = unlockedVaults.any { it.sameAddressAndUsername(vault) }
                 NavigationDrawerItem(
                     label = { Text(vault.name) },
                     selected = selectedVault == index,
@@ -62,9 +69,22 @@ fun VaultList(
                     badge = {
                         if (isMobileScreen() || hovered) {
                             Row {
+                                if (isUnlocked) {
+                                    IconButton(
+                                        onClick = {
+                                            onChangeSelectedVault(index)
+                                            state.vaultChangePasswordDialogState = VaultChangePasswordDialogState()
+                                            state.dialog = VaultListDialog.ChangePassword
+                                        },
+                                        modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
+                                    ) {
+                                        Icon(imageVector = Icons.Outlined.Lock, contentDescription = null)
+                                    }
+                                }
                                 IconButton(
                                     onClick = {
                                         onChangeSelectedVault(index)
+                                        state.vaultEditDialogState = VaultEditDialogState(vault)
                                         state.dialog = VaultListDialog.Edit
                                     },
                                     modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
@@ -88,7 +108,10 @@ fun VaultList(
             }
         }
         FloatingActionButton(
-            onClick = { state.dialog = VaultListDialog.Add },
+            onClick = {
+                state.vaultEditDialogState = VaultEditDialogState(null)
+                state.dialog = VaultListDialog.Add
+            },
             modifier = Modifier.align(Alignment.End).pointerHoverIcon(PointerIcon.Hand)
         ) {
             Icon(imageVector = Icons.Outlined.Add, contentDescription = null)
@@ -126,6 +149,21 @@ fun VaultList(
                     newVaults.removeAt(selectedVault)
                     onChangeVaults(newVaults)
                     onChangeSelectedVault(null)
+                },
+                onClose = { state.dialog = null }
+            )
+        }
+        VaultListDialog.ChangePassword -> {
+            val vault = vaults[selectedVault!!]
+            val unlockedVault = unlockedVaults.first { it.sameAddressAndUsername(vault) }
+            VaultChangePasswordDialog(
+                api = api,
+                state = state.vaultChangePasswordDialogState!!,
+                unlockedVault = unlockedVault,
+                onComplete = { newUnlockedVault ->
+                    onChangeUnlockedVaults(unlockedVaults.map {
+                        if (it.sameAddressAndUsername(newUnlockedVault)) newUnlockedVault else it
+                    })
                 },
                 onClose = { state.dialog = null }
             )

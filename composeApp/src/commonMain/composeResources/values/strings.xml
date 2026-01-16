@@ -18,6 +18,9 @@
     <string name="VaultSetupView_input_password">Password</string>
     <string name="VaultSetupView_input_repeatPassword">Repeat password</string>
     <string name="VaultSetupView_button_complete">Complete</string>
+    <string name="VaultChangePasswordDialog_title">Change password</string>
+    <string name="VaultChangePasswordDialog_button_change">Change password</string>
+    <string name="VaultChangePasswordDialog_button_cancel">Cancel</string>
     <string name="PasswordsView_title">Your passwords</string>
     <string name="PasswordView_title">Credentials for %1$s</string>
     <string name="PasswordView_button_copyPassword">Copy password</string>

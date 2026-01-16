@@ -1,6 +1,5 @@
 package de.fabiexe.spind
 
-import de.fabiexe.spind.endpoint.ErrorResponse
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -37,6 +36,19 @@ fun Routing.endpointsV1(storage: Storage) {
                 storage.writeSecret(principal.name, principal.password)
             }
 
+            call.respond(HttpStatusCode.OK)
+        }
+
+        patch("/v1/vault/secret") {
+            val principal = call.principal<UserPasswordCredential>()!!
+            val newSecret = call.receiveText()
+
+            if (newSecret.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@patch
+            }
+
+            storage.writeSecret(principal.name, newSecret)
             call.respond(HttpStatusCode.OK)
         }
     }

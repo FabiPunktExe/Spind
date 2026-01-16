@@ -1,12 +1,8 @@
 package de.fabiexe.spind.api
 
-import de.fabiexe.spind.ApiError
-import de.fabiexe.spind.Either
+import de.fabiexe.spind.*
 import de.fabiexe.spind.data.*
-import de.fabiexe.spind.decryptAES256CBC
-import de.fabiexe.spind.encryptAES256CBC
 import de.fabiexe.spind.endpoint.ErrorResponse
-import de.fabiexe.spind.hashSHA3256
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
@@ -177,6 +173,23 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
                 basicAuth(vault.username, vault.secret)
                 contentType(ContentType.Application.OctetStream)
                 setBody(ByteArrayContent(data, ContentType.Application.OctetStream))
+            }
+            return if (response.status.isSuccess()) {
+                null
+            } else {
+                response.body()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return ErrorResponse(ApiError.UNKNOWN_ERROR)
+        }
+    }
+
+    suspend fun changeSecret(vault: UnlockedVault, newSecret: String): ErrorResponse? {
+        try {
+            val response = httpClient.patch("${vault.address}/v1/vault/secret") {
+                basicAuth(vault.username, vault.secret)
+                setBody(newSecret)
             }
             return if (response.status.isSuccess()) {
                 null
