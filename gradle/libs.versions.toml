@@ -22,7 +22,7 @@ compose-materialIconsExtended = "1.7.3"
 junit = "4.13.2"
 logback = "1.5.22"
 kotlincrypto-hash = "0.8.0"
-materialKolor = "5.0.0-alpha04"
+materialKolor = "5.0.0-alpha05"
 
 [libraries]
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
