@@ -1,14 +1,13 @@
 package de.fabiexe.spind.component
 
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import de.fabiexe.spind.api.SpindApi
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
+import de.fabiexe.spind.isMobileScreen
 import kotlinx.coroutines.launch
 
 @Stable
@@ -28,8 +27,7 @@ fun VaultsView(
     unlockedVaults: List<UnlockedVault>,
     onChangeUnlockedVaults: suspend (List<UnlockedVault>) -> Unit
 ) {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    if (windowSizeClass.minWidthDp < 800 && vaults.isNotEmpty()) {
+    if (isMobileScreen() && vaults.isNotEmpty()) {
         // Mobile
         val coroutineScope = rememberCoroutineScope()
         val drawerState = rememberDrawerState(DrawerValue.Open)
@@ -66,7 +64,7 @@ fun VaultsView(
         PermanentNavigationDrawer(
             drawerContent = {
                 PermanentDrawerSheet(
-                    modifier = if (windowSizeClass.minWidthDp < 600) {
+                    modifier = if (isMobileScreen()) {
                         Modifier.fillMaxSize()
                     } else {
                         Modifier

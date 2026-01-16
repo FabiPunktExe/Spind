@@ -1,11 +1,13 @@
 package de.fabiexe.spind.component
 
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,6 +15,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import de.fabiexe.spind.data.UnlockedVault
+import de.fabiexe.spind.isMobileScreen
 import kotlinx.coroutines.launch
 
 @Stable
@@ -54,8 +57,7 @@ fun PasswordsView(
     vault: UnlockedVault,
     onChange: suspend (UnlockedVault) -> Unit
 ) {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    if (windowSizeClass.minWidthDp < 800 && vault.passwords.totalSize > 0) {
+    if (isMobileScreen() && vault.passwords.totalSize > 0) {
         // Mobile
         val coroutineScope = rememberCoroutineScope()
         val sheetState = rememberModalBottomSheetState(true) { value ->
@@ -115,7 +117,7 @@ fun PasswordsView(
         PermanentNavigationDrawer(
             drawerContent = {
                 PermanentDrawerSheet(
-                    modifier = if (windowSizeClass.minWidthDp < 600) {
+                    modifier = if (isMobileScreen()) {
                         Modifier.fillMaxSize()
                     } else {
                         Modifier

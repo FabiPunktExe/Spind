@@ -19,6 +19,7 @@ import de.fabiexe.spind.composeapp.generated.resources.PasswordsView_title
 import de.fabiexe.spind.composeapp.generated.resources.Res
 import de.fabiexe.spind.data.PasswordGroup
 import de.fabiexe.spind.data.UnlockedVault
+import de.fabiexe.spind.isMobileScreen
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -122,7 +123,7 @@ private fun PasswordGroupView(
             onClick = { selectPassword(currentAbsoluteIndex) },
             modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
             badge = {
-                if (hovered) {
+                if (isMobileScreen() || hovered) {
                     Row {
                         IconButton(
                             onClick = { editPassword(currentAbsoluteIndex) },

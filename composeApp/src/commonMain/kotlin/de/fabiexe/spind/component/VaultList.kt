@@ -4,7 +4,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import de.fabiexe.spind.composeapp.generated.resources.Res
 import de.fabiexe.spind.composeapp.generated.resources.VaultsView_title
 import de.fabiexe.spind.data.Vault
+import de.fabiexe.spind.isMobileScreen
 import org.jetbrains.compose.resources.stringResource
 
 enum class VaultListDialog {
@@ -60,7 +60,7 @@ fun VaultList(
                     onClick = { onChangeSelectedVault(index) },
                     modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
                     badge = {
-                        if (hovered) {
+                        if (isMobileScreen() || hovered) {
                             Row {
                                 IconButton(
                                     onClick = {
