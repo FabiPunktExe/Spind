@@ -151,7 +151,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         val securityQuestions = Json.encodeToString(vault.securityQuestions.map(SecurityQuestion::question)).encodeToByteArray()
         val securityQuestionAnswers = Json.encodeToString(vault.securityQuestions.map(SecurityQuestion::answer))
         val passwordEncryptedBackupPassword = encryptAES256CBC(securityQuestionAnswers.encodeToByteArray(), password, salt)
-        val backupPasswordEncryptedData = encryptAES256CBC(data.encodeToByteArray(), backupPassword, salt)
+        val backupPasswordEncryptedPasswordHash = encryptAES256CBC(vault.passwordHash.encodeToByteArray(), backupPassword, salt)
 
         val buffer = Buffer()
         buffer.writeInt(1) // Version
@@ -161,8 +161,8 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         buffer.write(securityQuestions)
         buffer.writeInt(passwordEncryptedBackupPassword.size)
         buffer.write(passwordEncryptedBackupPassword)
-        buffer.writeInt(backupPasswordEncryptedData.size)
-        buffer.write(backupPasswordEncryptedData)
+        buffer.writeInt(backupPasswordEncryptedPasswordHash.size)
+        buffer.write(backupPasswordEncryptedPasswordHash)
         return buffer.readByteArray()
     }
 
