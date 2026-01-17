@@ -29,20 +29,18 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
+@Stable
+class VaultUnlockViewState(val vault: Vault) {
+    var vaultSecurityDialogState by mutableStateOf<VaultSecurityDialogState?>(null)
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VaultUnlockView(
     api: SpindApi,
-    vault: Vault,
+    state: VaultUnlockViewState,
     onUnlock: suspend (UnlockedVault) -> Unit
 ) {
-    var settingUp by remember { mutableStateOf(false) }
-
-    if (settingUp) {
-        VaultSetupView(api, vault, onUnlock)
-        return
-    }
-
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
     var processing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
@@ -53,11 +51,11 @@ fun VaultUnlockView(
         }
 
         processing = true
-        when (val result = api.unlockVaultUsingPassword(vault, password)) {
+        when (val result = api.unlockVaultUsingPassword(state.vault, password)) {
             is Either.Left -> onUnlock(result.value)
             is Either.Right -> {
                 if (result.value.error == ApiError.VAULT_NOT_INITIALIZED) {
-                    settingUp = true
+                    state.vaultSecurityDialogState = VaultSecurityDialogState(null)
                 } else {
                     // TODO: Show error to user
                     println(result.value)
@@ -68,9 +66,7 @@ fun VaultUnlockView(
     }
 
     DisposableEffect(Unit) {
-        onDispose {
-            coroutineScope.cancel()
-        }
+        onDispose(coroutineScope::cancel)
     }
 
     Column(
@@ -78,7 +74,7 @@ fun VaultUnlockView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(stringResource(Res.string.VaultUnlockView_title, vault.name))
+        Text(stringResource(Res.string.VaultUnlockView_title, state.vault.name))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -103,5 +99,16 @@ fun VaultUnlockView(
                 Text(stringResource(Res.string.VaultUnlockView_button_unlock))
             }
         }
+    }
+
+    if (state.vaultSecurityDialogState != null) {
+        VaultSecurityDialog(
+            api = api,
+            state = state.vaultSecurityDialogState!!,
+            onComplete = onUnlock,
+            onClose = { state.vaultSecurityDialogState = null },
+            vaultAddress = state.vault.address,
+            vaultUsername = state.vault.username
+        )
     }
 }

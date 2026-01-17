@@ -15,6 +15,16 @@ class VaultsViewState {
     val vaultListState = VaultListState()
     var passwordsViewState = PasswordsViewState()
     var selected by mutableStateOf<Int?>(null)
+    var vaultUnlockViewState by mutableStateOf<VaultUnlockViewState?>(null)
+
+    fun select(index: Int?, vaults: List<Vault>, unlockedVaults: List<UnlockedVault>) {
+        selected = index
+        vaultUnlockViewState = if (index != null && unlockedVaults.none { it.sameAddressAndUsername(vaults[index]) }) {
+            VaultUnlockViewState(vaults[index])
+        } else {
+            null
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -46,7 +56,7 @@ fun VaultsView(
                         onChangeUnlockedVaults = onChangeUnlockedVaults,
                         selectedVault = state.selected,
                         onChangeSelectedVault = { index ->
-                            state.selected = index
+                            state.select(index, vaults, unlockedVaults)
                             coroutineScope.launch { drawerState.close() }
                         }
                     )
@@ -83,7 +93,7 @@ fun VaultsView(
                         onChangeUnlockedVaults = onChangeUnlockedVaults,
                         selectedVault = state.selected,
                         onChangeSelectedVault = { index ->
-                            state.selected = index
+                            state.select(index, vaults, unlockedVaults)
                         }
                     )
                 }
@@ -117,10 +127,8 @@ private fun VaultsViewContent(
     if (unlockedVault == null) {
         VaultUnlockView(
             api = api,
-            vault = vault,
-            onUnlock = { newUnlockedVault ->
-                onChangeUnlockedVaults(unlockedVaults + newUnlockedVault)
-            }
+            state = state.vaultUnlockViewState!!,
+            onUnlock = { unlockedVault -> onChangeUnlockedVaults(unlockedVaults + unlockedVault) }
         )
     } else {
         PasswordsView(

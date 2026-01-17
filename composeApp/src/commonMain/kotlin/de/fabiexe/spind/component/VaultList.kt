@@ -33,7 +33,7 @@ class VaultListState {
     val scrollState = ScrollState(0)
     var dialog by mutableStateOf<VaultListDialog?>(null)
     var vaultEditDialogState by mutableStateOf<VaultEditDialogState?>(null)
-    var vaultChangePasswordDialogState by mutableStateOf<VaultChangePasswordDialogState?>(null)
+    var vaultSecurityDialogState by mutableStateOf<VaultSecurityDialogState?>(null)
 }
 
 @Composable
@@ -73,7 +73,9 @@ fun VaultList(
                                     IconButton(
                                         onClick = {
                                             onChangeSelectedVault(index)
-                                            state.vaultChangePasswordDialogState = VaultChangePasswordDialogState()
+                                            val vault = vaults[index]
+                                            val unlockedVault = unlockedVaults.first { it.sameAddressAndUsername(vault) }
+                                            state.vaultSecurityDialogState = VaultSecurityDialogState(unlockedVault)
                                             state.dialog = VaultListDialog.ChangePassword
                                         },
                                         modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
@@ -154,12 +156,9 @@ fun VaultList(
             )
         }
         VaultListDialog.ChangePassword -> {
-            val vault = vaults[selectedVault!!]
-            val unlockedVault = unlockedVaults.first { it.sameAddressAndUsername(vault) }
-            VaultChangePasswordDialog(
+            VaultSecurityDialog(
                 api = api,
-                state = state.vaultChangePasswordDialogState!!,
-                unlockedVault = unlockedVault,
+                state = state.vaultSecurityDialogState!!,
                 onComplete = { newUnlockedVault ->
                     onChangeUnlockedVaults(unlockedVaults.map {
                         if (it.sameAddressAndUsername(newUnlockedVault)) newUnlockedVault else it
