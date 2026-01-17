@@ -14,9 +14,13 @@
     <string name="VaultUnlockView_title">Unlock vault %1$s</string>
     <string name="VaultUnlockView_input_password">Password</string>
     <string name="VaultUnlockView_button_unlock">Unlock</string>
+    <string name="VaultUnlockView_button_forgotPassword">Forgot password?</string>
+    <string name="VaultRecoveryDialog_title">Recovery</string>
+    <string name="VaultRecoveryDialog_label_questions">Security questions</string>
+    <string name="VaultRecoveryDialog_button_unlock">Unlock</string>
     <string name="VaultSecurityDialog_title_setup">Set up your vault</string>
     <string name="VaultSecurityDialog_title_changePassword">Change password</string>
-    <string name="VaultSecurityConfigDialog_label_securityQuestions">Security questions for recovery (optional)</string>
+    <string name="VaultSecurityDialog_label_securityQuestions">Security questions for recovery (optional)</string>
     <string name="VaultSecurityDialog_input_password">Password</string>
     <string name="VaultSecurityDialog_input_repeatPassword">Repeat password</string>
     <string name="VaultSecurityDialog_input_securityQuestion">Question</string>

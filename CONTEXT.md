@@ -32,17 +32,22 @@ Spind implements a zero-knowledge architecture where the server never sees the u
 2. Password Hash: `SHA3-256(Master Password)`. Used for local key derivation.
 3. Secret (API Token): `SHA3-256(Password Hash)`. Used for Basic Auth with the server.
 4. Encryption Key: First 32 characters of the `Password Hash`.
+5. Backup Password: Derived from security question answers. `answers.joinToString(";")`.
+6. Backup Password Hash: `SHA3-256(Backup Password)`.
+7. Backup Secret: `SHA3-256(Backup Password Hash)`. Used for recovery via the server.
 
 ### Encryption
 - Algorithm: AES-256-CBC
 - Hashing: SHA3-256
 - Vault Format: Versioned binary blob (currently Version 1).
   - Contains encrypted password data, security questions, and optional backup/recovery data.
-- Backup Password: Derived from security question answers.
 
 ## API Endpoints (v1)
 - `GET /v1/vault`: Retrieve the encrypted vault blob. Requires Basic Auth (Username + Secret).
 - `PUT /v1/vault`: Upload/Update the encrypted vault blob. Requires Basic Auth (Username + Secret).
+- `PATCH /v1/vault/security`: Update security questions and answers. Requires Basic Auth (Username + Secret).
+- `GET /v1/vault/security-questions?name={username}`: Retrieve security questions for vault recovery.
+- `GET /v1/vault/recovery`: Retrieve the encrypted vault blob. Requires Basic Auth (Username + Backup Secret).
 
 ## Build and Run
 Use `.\gradlew.bat` on Windows or `./gradlew` on Unix-based systems.

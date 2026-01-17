@@ -9,4 +9,8 @@ interface Storage {
     fun write(vault: String): OutputStream
     fun readSecret(vault: String): String?
     fun writeSecret(vault: String, secret: String)
+    fun readSecurityQuestions(vault: String): List<String>?
+    fun writeSecurityQuestions(vault: String, questions: List<String>)
+    fun readBackupSecret(vault: String): String?
+    fun writeBackupSecret(vault: String, backupSecret: String?)
 }

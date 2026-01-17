@@ -17,10 +17,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import de.fabiexe.spind.ApiError
 import de.fabiexe.spind.Either
 import de.fabiexe.spind.api.SpindApi
-import de.fabiexe.spind.composeapp.generated.resources.Res
-import de.fabiexe.spind.composeapp.generated.resources.VaultUnlockView_button_unlock
-import de.fabiexe.spind.composeapp.generated.resources.VaultUnlockView_input_password
-import de.fabiexe.spind.composeapp.generated.resources.VaultUnlockView_title
+import de.fabiexe.spind.composeapp.generated.resources.*
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +29,7 @@ import org.jetbrains.compose.resources.stringResource
 @Stable
 class VaultUnlockViewState(val vault: Vault) {
     var vaultSecurityDialogState by mutableStateOf<VaultSecurityDialogState?>(null)
+    var vaultRecoveryDialogState by mutableStateOf<VaultRecoveryDialogState?>(null)
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -98,6 +96,27 @@ fun VaultUnlockView(
             ) {
                 Text(stringResource(Res.string.VaultUnlockView_button_unlock))
             }
+            TextButton(
+                onClick = {
+                    coroutineScope.launch {
+                        processing = true
+                        when (val result = api.getSecurityQuestions(state.vault)) {
+                            is Either.Left -> {
+                                state.vaultRecoveryDialogState = VaultRecoveryDialogState(result.value)
+                            }
+                            is Either.Right -> {
+                                // TODO: Show error
+                                println(result.value)
+                            }
+                        }
+                        processing = false
+                    }
+                },
+                enabled = !processing,
+                modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
+            ) {
+                Text(stringResource(Res.string.VaultUnlockView_button_forgotPassword))
+            }
         }
     }
 
@@ -107,6 +126,15 @@ fun VaultUnlockView(
             state = state.vaultSecurityDialogState!!,
             onComplete = onUnlock,
             onClose = { state.vaultSecurityDialogState = null },
+            vaultAddress = state.vault.address,
+            vaultUsername = state.vault.username
+        )
+    } else if (state.vaultRecoveryDialogState != null) {
+        VaultRecoveryDialog(
+            api = api,
+            state = state.vaultRecoveryDialogState!!,
+            onComplete = onUnlock,
+            onClose = { state.vaultRecoveryDialogState = null },
             vaultAddress = state.vault.address,
             vaultUsername = state.vault.username
         )

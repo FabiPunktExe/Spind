@@ -3,6 +3,8 @@ package de.fabiexe.spind.api
 import de.fabiexe.spind.*
 import de.fabiexe.spind.data.*
 import de.fabiexe.spind.endpoint.ErrorResponse
+import de.fabiexe.spind.endpoint.v1.V1VaultSecurityQuestionsResponse
+import de.fabiexe.spind.endpoint.v1.V1VaultSecurityRequest
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.*
@@ -37,6 +39,24 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         try {
             val response = httpClient.get("${vault.address}/v1/vault") {
                 basicAuth(vault.username, secret)
+            }
+            return if (response.status.isSuccess()) {
+                Either.Left(response.bodyAsBytes())
+            } else if (response.status == HttpStatusCode.PreconditionFailed) {
+                Either.Right(ErrorResponse(ApiError.VAULT_NOT_INITIALIZED))
+            } else {
+                Either.Right(response.body())
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Either.Right(ErrorResponse(ApiError.UNKNOWN_ERROR))
+        }
+    }
+
+    suspend fun getVaultRecovering(vault: Vault, backupSecret: String): Either<ByteArray, ErrorResponse> {
+        try {
+            val response = httpClient.get("${vault.address}/v1/vault/recovery") {
+                basicAuth(vault.username, backupSecret)
             }
             return if (response.status.isSuccess()) {
                 Either.Left(response.bodyAsBytes())
@@ -89,20 +109,15 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         )
     }
 
-    suspend fun unlockVaultUsingPassword(vault: Vault, password: String): Either<UnlockedVault, ErrorResponse> {
-        val passwordHash = hashSHA3256(password.encodeToByteArray()).toHexString()
-        val secret = hashSHA3256(passwordHash.encodeToByteArray()).toHexString()
-        val key = passwordHash.substring(0, 32)
+    suspend fun unlockVaultUsingPasswordHash(
+        vault: Vault,
+        decodedVault: DecodedVault,
+        passwordHashStr: String,
+        secretStr: String
+    ): Either<UnlockedVault, ErrorResponse> {
+        val key = passwordHashStr.substring(0, 32)
         val salt = "salt".repeat(4)
 
-        val data = when (val result = getVault(vault, secret)) {
-            is Either.Left -> result.value
-            is Either.Right -> return result
-        }
-        val decodedVault = when (val result = decodeVault(data)) {
-            is Either.Left -> result.value
-            is Either.Right -> return result
-        }
         val decryptedData = try {
             decryptAES256CBC(decodedVault.passwordEncryptedData, key, salt)
         } catch (_: Throwable) {
@@ -132,26 +147,45 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         return Either.Left(UnlockedVault(
             vault.address,
             vault.username,
-            passwordHash,
-            secret,
+            passwordHashStr,
+            secretStr,
             passwords,
             securityQuestions
         ))
     }
 
+    suspend fun unlockVaultUsingPassword(vault: Vault, password: String): Either<UnlockedVault, ErrorResponse> {
+        val passwordHash = hashSHA3256(password.encodeToByteArray())
+        val passwordHashStr = passwordHash.toHexString()
+        val secret = hashSHA3256(passwordHash)
+        val secretStr = secret.toHexString()
+
+        val data = when (val result = getVault(vault, secretStr)) {
+            is Either.Left -> result.value
+            is Either.Right -> return result
+        }
+        val decodedVault = when (val result = decodeVault(data)) {
+            is Either.Left -> result.value
+            is Either.Right -> return result
+        }
+
+        return unlockVaultUsingPasswordHash(vault, decodedVault, passwordHashStr, secretStr)
+    }
+
     suspend fun encodeVault(vault: UnlockedVault): ByteArray {
-        val password = vault.passwordHash.substring(0, 32)
-        var backupPassword = vault.securityQuestions.joinToString(";") { it.answer }
-        backupPassword = hashSHA3256(backupPassword.encodeToByteArray()).toHexString()
-        backupPassword = backupPassword.substring(0, 32)
+        val key = vault.passwordHash.substring(0, 32)
+        val backupPassword = vault.securityQuestions.joinToString(";") { it.answer }
+        val backupPasswordHash = hashSHA3256(backupPassword.encodeToByteArray())
+        val backupPasswordHashStr = backupPasswordHash.toHexString()
+        val backupKey = backupPasswordHashStr.substring(0, 32)
         val salt = "salt".repeat(4)
 
         val data = Json.encodeToString(PasswordGroup.serializer(), vault.passwords)
-        val passwordEncryptedData = encryptAES256CBC(data.encodeToByteArray(), password, salt)
+        val passwordEncryptedData = encryptAES256CBC(data.encodeToByteArray(), key, salt)
         val securityQuestions = Json.encodeToString(vault.securityQuestions.map(SecurityQuestion::question)).encodeToByteArray()
         val securityQuestionAnswers = Json.encodeToString(vault.securityQuestions.map(SecurityQuestion::answer))
-        val passwordEncryptedBackupPassword = encryptAES256CBC(securityQuestionAnswers.encodeToByteArray(), password, salt)
-        val backupPasswordEncryptedPasswordHash = encryptAES256CBC(vault.passwordHash.encodeToByteArray(), backupPassword, salt)
+        val passwordEncryptedBackupPassword = encryptAES256CBC(securityQuestionAnswers.encodeToByteArray(), key, salt)
+        val backupPasswordEncryptedPasswordHash = encryptAES256CBC(vault.passwordHash.hexToByteArray(), backupKey, salt)
 
         val buffer = Buffer()
         buffer.writeInt(1) // Version
@@ -172,7 +206,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             val response = httpClient.put("${vault.address}/v1/vault") {
                 basicAuth(vault.username, vault.secret)
                 contentType(ContentType.Application.OctetStream)
-                setBody(ByteArrayContent(data, ContentType.Application.OctetStream))
+                setBody(ByteArrayContent(data))
             }
             return if (response.status.isSuccess()) {
                 null
@@ -185,11 +219,23 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         }
     }
 
-    suspend fun changeSecret(vault: UnlockedVault, newSecret: String): ErrorResponse? {
+    suspend fun updateSecurity(
+        vault: UnlockedVault,
+        secret: String,
+        securityQuestions: List<SecurityQuestion>
+    ): ErrorResponse? {
         try {
-            val response = httpClient.patch("${vault.address}/v1/vault/secret") {
+            val backupPassword = securityQuestions.joinToString(";") { it.answer }
+            val backupPasswordHash = hashSHA3256(backupPassword.encodeToByteArray())
+            val backupSecret = hashSHA3256(backupPasswordHash)
+            val response = httpClient.patch("${vault.address}/v1/vault/security") {
                 basicAuth(vault.username, vault.secret)
-                setBody(newSecret)
+                contentType(ContentType.Application.Json)
+                setBody(V1VaultSecurityRequest(
+                    secret,
+                    securityQuestions.map(SecurityQuestion::question),
+                    backupSecret.toHexString()
+                ))
             }
             return if (response.status.isSuccess()) {
                 null
@@ -200,5 +246,55 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             e.printStackTrace()
             return ErrorResponse(ApiError.UNKNOWN_ERROR)
         }
+    }
+
+    suspend fun getSecurityQuestions(vault: Vault): Either<List<String>, ErrorResponse> {
+        try {
+            val response = httpClient.get("${vault.address}/v1/vault/security-questions") {
+                url { parameters["name"] = vault.username }
+            }
+            return if (response.status.isSuccess()) {
+                val securityQuestions = response.body<V1VaultSecurityQuestionsResponse>().securityQuestions
+                if (securityQuestions.isEmpty()) {
+                    Either.Right(ErrorResponse(ApiError.RECOVERY_NOT_POSSIBLE))
+                } else {
+                    Either.Left(securityQuestions)
+                }
+            } else {
+                Either.Right(response.body())
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return Either.Right(ErrorResponse(ApiError.UNKNOWN_ERROR))
+        }
+    }
+
+    suspend fun unlockVaultUsingSecurityQuestions(vault: Vault, answers: List<String>): Either<UnlockedVault, ErrorResponse> {
+        val backupPassword = answers.joinToString(";")
+        val backupPasswordHash = hashSHA3256(backupPassword.encodeToByteArray())
+        val backupPasswordHashStr = backupPasswordHash.toHexString()
+        val backupSecret = hashSHA3256(backupPasswordHash)
+        val backupSecretStr = backupSecret.toHexString()
+        val backupKey = backupPasswordHashStr.substring(0, 32)
+        val salt = "salt".repeat(4)
+
+        val data = when (val result = getVaultRecovering(vault, backupSecretStr)) {
+            is Either.Left -> result.value
+            is Either.Right -> return result
+        }
+        val decodedVault = when (val result = decodeVault(data)) {
+            is Either.Left -> result.value
+            is Either.Right -> return result
+        }
+        if (decodedVault.backupPasswordEncryptedPasswordHash == null) {
+            return Either.Right(ErrorResponse(ApiError.VAULT_NOT_INITIALIZED))
+        }
+
+        val passwordHash = decryptAES256CBC(decodedVault.backupPasswordEncryptedPasswordHash, backupKey, salt)
+        val passwordHashStr = passwordHash.toHexString()
+        val secret = hashSHA3256(passwordHash)
+        val secretStr = secret.toHexString()
+
+        return unlockVaultUsingPasswordHash(vault, decodedVault, passwordHashStr, secretStr)
     }
 }

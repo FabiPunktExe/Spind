@@ -74,35 +74,37 @@ fun VaultSecurityDialog(
 
         state.processing = true
 
-        val passwordHash = hashSHA3256(state.password.encodeToByteArray()).toHexString()
-        val secret = hashSHA3256(passwordHash.encodeToByteArray()).toHexString()
+        val passwordHash = hashSHA3256(state.password.encodeToByteArray())
+        val passwordHashStr = passwordHash.toHexString()
+        val secret = hashSHA3256(passwordHash)
+        val secretStr = secret.toHexString()
+
+        // Update security stuff on server if vault exists
+        if (state.vault != null) {
+            val result = api.updateSecurity(state.vault, secretStr, state.securityQuestions)
+            if (result != null) {
+                // TODO: Show error
+                println(result)
+                state.processing = false
+                return@launch
+            }
+        }
 
         val newUnlockedVault = if (state.vault != null) {
             state.vault.copy(
-                passwordHash = passwordHash,
-                secret = secret,
+                passwordHash = passwordHashStr,
+                secret = secretStr,
                 securityQuestions = state.securityQuestions.toList()
             )
         } else {
             UnlockedVault(
                 vaultAddress!!,
                 vaultUsername!!,
-                passwordHash,
-                secret,
+                passwordHashStr,
+                secretStr,
                 PasswordGroup("", listOf(), listOf()),
                 state.securityQuestions.toList()
             )
-        }
-
-        // Change secret if vault already exists
-        if (state.vault != null) {
-            val secretResult = api.changeSecret(state.vault, secret)
-            if (secretResult != null) {
-                // TODO: Show error
-                println(secretResult)
-                state.processing = false
-                return@launch
-            }
         }
 
         // Upload new vault
@@ -205,10 +207,13 @@ fun VaultSecurityDialog(
                 }
 
                 // Security questions
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     // Title
                     Text(
-                        text = stringResource(Res.string.VaultSecurityConfigDialog_label_securityQuestions),
+                        text = stringResource(Res.string.VaultSecurityDialog_label_securityQuestions),
                         style = MaterialTheme.typography.titleMedium
                     )
 

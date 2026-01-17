@@ -68,7 +68,7 @@ fun Application.module(storage: Storage) {
         gzip()
     }
     install(Authentication) {
-        basic("vault-basic") {
+        basic("v1-vault") {
             validate { credentials ->
                 if (!storage.exists(credentials.name)) {
                     return@validate null
@@ -76,6 +76,20 @@ fun Application.module(storage: Storage) {
 
                 val secret = storage.readSecret(credentials.name)
                 if (secret != null && credentials.password != secret) {
+                    return@validate null
+                }
+
+                return@validate credentials
+            }
+        }
+        basic("v1-vault-recovery") {
+            validate { credentials ->
+                if (!storage.exists(credentials.name)) {
+                    return@validate null
+                }
+
+                val backupSecret = storage.readBackupSecret(credentials.name)
+                if (backupSecret != null && credentials.password != backupSecret) {
                     return@validate null
                 }
 
