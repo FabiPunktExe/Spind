@@ -16,10 +16,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import de.fabiexe.spind.ApiError
 import de.fabiexe.spind.Either
+import de.fabiexe.spind.LocalSnackbarHostState
 import de.fabiexe.spind.api.SpindApi
 import de.fabiexe.spind.composeapp.generated.resources.*
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
+import de.fabiexe.spind.show
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -27,7 +29,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Stable
-class VaultUnlockViewState(val vault: Vault) {
+class VaultUnlockViewState {
     var vaultSecurityDialogState by mutableStateOf<VaultSecurityDialogState?>(null)
     var vaultRecoveryDialogState by mutableStateOf<VaultRecoveryDialogState?>(null)
 }
@@ -37,9 +39,11 @@ class VaultUnlockViewState(val vault: Vault) {
 fun VaultUnlockView(
     api: SpindApi,
     state: VaultUnlockViewState,
+    vault: Vault,
     onUnlock: suspend (UnlockedVault) -> Unit
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
+    val snackbarHostState = LocalSnackbarHostState.current
     var processing by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
 
@@ -49,14 +53,13 @@ fun VaultUnlockView(
         }
 
         processing = true
-        when (val result = api.unlockVaultUsingPassword(state.vault, password)) {
+        when (val result = api.unlockVaultUsingPassword(vault, password)) {
             is Either.Left -> onUnlock(result.value)
             is Either.Right -> {
                 if (result.value.error == ApiError.VAULT_NOT_INITIALIZED) {
                     state.vaultSecurityDialogState = VaultSecurityDialogState(null)
                 } else {
-                    // TODO: Show error to user
-                    println(result.value)
+                    launch { result.show(snackbarHostState) }
                 }
             }
         }
@@ -72,7 +75,7 @@ fun VaultUnlockView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(stringResource(Res.string.VaultUnlockView_title, state.vault.name))
+        Text(stringResource(Res.string.VaultUnlockView_title, vault.name))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -100,14 +103,11 @@ fun VaultUnlockView(
                 onClick = {
                     coroutineScope.launch {
                         processing = true
-                        when (val result = api.getSecurityQuestions(state.vault)) {
+                        when (val result = api.getSecurityQuestions(vault)) {
                             is Either.Left -> {
                                 state.vaultRecoveryDialogState = VaultRecoveryDialogState(result.value)
                             }
-                            is Either.Right -> {
-                                // TODO: Show error
-                                println(result.value)
-                            }
+                            is Either.Right -> launch { result.show(snackbarHostState) }
                         }
                         processing = false
                     }
@@ -126,8 +126,8 @@ fun VaultUnlockView(
             state = state.vaultSecurityDialogState!!,
             onComplete = onUnlock,
             onClose = { state.vaultSecurityDialogState = null },
-            vaultAddress = state.vault.address,
-            vaultUsername = state.vault.username
+            vaultAddress = vault.address,
+            vaultUsername = vault.username
         )
     } else if (state.vaultRecoveryDialogState != null) {
         VaultRecoveryDialog(
@@ -135,8 +135,8 @@ fun VaultUnlockView(
             state = state.vaultRecoveryDialogState!!,
             onComplete = onUnlock,
             onClose = { state.vaultRecoveryDialogState = null },
-            vaultAddress = state.vault.address,
-            vaultUsername = state.vault.username
+            vaultAddress = vault.address,
+            vaultUsername = vault.username
         )
     }
 }

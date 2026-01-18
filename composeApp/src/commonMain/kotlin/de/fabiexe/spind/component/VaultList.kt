@@ -18,7 +18,8 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import de.fabiexe.spind.api.SpindApi
-import de.fabiexe.spind.composeapp.generated.resources.*
+import de.fabiexe.spind.composeapp.generated.resources.Res
+import de.fabiexe.spind.composeapp.generated.resources.VaultsView_title
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
 import de.fabiexe.spind.isMobileScreen
@@ -139,6 +140,13 @@ fun VaultList(
                     val newVaults = vaults.toMutableList()
                     newVaults[selectedVault!!] = newVault
                     onChangeVaults(newVaults)
+                    onChangeUnlockedVaults(unlockedVaults.map {
+                        if (it.sameAddressAndUsername(vaults[selectedVault])) {
+                            it.copy(address = newVault.address, username = newVault.username)
+                        } else {
+                            it
+                        }
+                    })
                 },
                 onClose = { state.dialog = null }
             )
@@ -150,6 +158,10 @@ fun VaultList(
                     val newVaults = vaults.toMutableList()
                     newVaults.removeAt(selectedVault)
                     onChangeVaults(newVaults)
+                    val newUnlockedVaults = unlockedVaults.filterNot {
+                        it.sameAddressAndUsername(vaults[selectedVault])
+                    }
+                    onChangeUnlockedVaults(newUnlockedVaults)
                     onChangeSelectedVault(null)
                 },
                 onClose = { state.dialog = null }

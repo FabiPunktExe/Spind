@@ -16,6 +16,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.isMobileScreen
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Stable
@@ -55,7 +56,7 @@ class PasswordsViewState {
 fun PasswordsView(
     state: PasswordsViewState,
     vault: UnlockedVault,
-    onChange: suspend (UnlockedVault) -> Unit
+    onChange: suspend CoroutineScope.(UnlockedVault) -> Unit
 ) {
     if (isMobileScreen() && vault.passwords.totalSize > 0) {
         // Mobile
@@ -154,7 +155,7 @@ fun PasswordsView(
 @Composable
 private fun PasswordsViewContent(
     vault: UnlockedVault,
-    onChange: suspend (UnlockedVault) -> Unit,
+    onChange: suspend CoroutineScope.(UnlockedVault) -> Unit,
     state: PasswordsViewState
 ) {
     val selectedPassword = state.selectedPassword

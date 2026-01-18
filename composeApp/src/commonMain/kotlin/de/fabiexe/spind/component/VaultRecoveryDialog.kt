@@ -18,11 +18,13 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import de.fabiexe.spind.Either
+import de.fabiexe.spind.LocalSnackbarHostState
 import de.fabiexe.spind.api.SpindApi
 import de.fabiexe.spind.composeapp.generated.resources.*
 import de.fabiexe.spind.data.SecurityQuestion
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
+import de.fabiexe.spind.show
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -51,6 +53,7 @@ fun VaultRecoveryDialog(
     vaultUsername: String
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
+    val snackbarHostState = LocalSnackbarHostState.current
 
     fun submit() = coroutineScope.launch {
         if (!state.isValid()) {
@@ -65,10 +68,7 @@ fun VaultRecoveryDialog(
                 onComplete(result.value)
                 onClose()
             }
-            is Either.Right -> {
-                // TODO: Show error
-                println(result.value)
-            }
+            is Either.Right -> launch { result.show(snackbarHostState) }
         }
         state.processing = false
     }

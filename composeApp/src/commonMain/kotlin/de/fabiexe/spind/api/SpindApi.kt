@@ -49,7 +49,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return Either.Right(ErrorResponse(ApiError.UNKNOWN_ERROR))
+            return Either.Right(ErrorResponse(ApiError.NETWORK_ERROR))
         }
     }
 
@@ -67,7 +67,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return Either.Right(ErrorResponse(ApiError.UNKNOWN_ERROR))
+            return Either.Right(ErrorResponse(ApiError.NETWORK_ERROR))
         }
     }
 
@@ -215,7 +215,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return ErrorResponse(ApiError.UNKNOWN_ERROR)
+            return ErrorResponse(ApiError.NETWORK_ERROR)
         }
     }
 
@@ -244,7 +244,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return ErrorResponse(ApiError.UNKNOWN_ERROR)
+            return ErrorResponse(ApiError.NETWORK_ERROR)
         }
     }
 
@@ -265,7 +265,7 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return Either.Right(ErrorResponse(ApiError.UNKNOWN_ERROR))
+            return Either.Right(ErrorResponse(ApiError.NETWORK_ERROR))
         }
     }
 

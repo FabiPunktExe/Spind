@@ -10,6 +10,7 @@ package de.fabiexe.spind
 enum class ApiError(val code: Int, val httpCode: Int) {
     // General errors
     UNKNOWN_ERROR(1, 500),
+    NETWORK_ERROR(2, 503),
 
     // Server errors
     INTERNAL_SERVER_ERROR(1001, 500),

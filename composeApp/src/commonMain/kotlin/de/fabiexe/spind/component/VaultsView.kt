@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import de.fabiexe.spind.LocalSnackbarHostState
 import de.fabiexe.spind.api.SpindApi
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.data.Vault
 import de.fabiexe.spind.isMobileScreen
+import de.fabiexe.spind.show
 import kotlinx.coroutines.launch
 
 @Stable
@@ -20,7 +22,7 @@ class VaultsViewState {
     fun select(index: Int?, vaults: List<Vault>, unlockedVaults: List<UnlockedVault>) {
         selected = index
         vaultUnlockViewState = if (index != null && unlockedVaults.none { it.sameAddressAndUsername(vaults[index]) }) {
-            VaultUnlockViewState(vaults[index])
+            VaultUnlockViewState()
         } else {
             null
         }
@@ -122,12 +124,14 @@ private fun VaultsViewContent(
         return
     }
 
+    val snackbarHostState = LocalSnackbarHostState.current
     val vault = vaults[state.selected!!]
     val unlockedVault = unlockedVaults.firstOrNull { it.sameAddressAndUsername(vault) }
     if (unlockedVault == null) {
         VaultUnlockView(
             api = api,
             state = state.vaultUnlockViewState!!,
+            vault = vault,
             onUnlock = { unlockedVault -> onChangeUnlockedVaults(unlockedVaults + unlockedVault) }
         )
     } else {
@@ -135,7 +139,10 @@ private fun VaultsViewContent(
             state = state.passwordsViewState,
             vault = unlockedVault,
             onChange = { newVault ->
-                api.uploadVault(newVault)
+                val result = api.uploadVault(newVault)
+                if (result != null) {
+                    launch { result.show(snackbarHostState) }
+                }
                 onChangeUnlockedVaults(unlockedVaults.map { vault ->
                     if (vault.sameAddressAndUsername(newVault)) {
                         newVault

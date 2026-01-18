@@ -51,4 +51,15 @@
     <string name="SecurityQuestion_MothersSecondName">What is your mother's second name?</string>
     <string name="SecurityQuestion_FirstTeachersLastName">What is the last name of your first teacher?</string>
     <string name="SecurityQuestion_FirstVideoGame">What is the name of your first video game?</string>
+    <string name="ApiError_1">Unknown error occurred.</string>
+    <string name="ApiError_2">A network error occurred. Please check your internet connection.</string>
+    <string name="ApiError_1001">A internal server error occurred. Please try again later.</string>
+    <string name="ApiError_1002">That vault is not set up yet.</string>
+    <string name="ApiError_1003">The provided username or password is incorrect.</string>
+    <string name="ApiError_1004">The requested vault was not found.</string>
+    <string name="ApiError_2001">The vault is corrupted and cannot be unlocked.</string>
+    <string name="ApiError_2002">Your Spind version is too old to unlock the vault. Please update your app.</string>
+    <string name="ApiError_2003">Your Spind version is too new to unlock the vault. Please downgrade your app.</string>
+    <string name="ApiError_2004">The provided username or password is incorrect.</string>
+    <string name="ApiError_2005">Recovery via security questions is not possible for that vault.</string>
 </resources>

@@ -22,7 +22,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun PasswordDeleteDialog(
     password: Password,
-    onDelete: suspend () -> Unit,
+    onDelete: suspend CoroutineScope.() -> Unit,
     onClose: () -> Unit
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }

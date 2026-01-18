@@ -19,12 +19,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import de.fabiexe.spind.LocalSnackbarHostState
 import de.fabiexe.spind.api.SpindApi
 import de.fabiexe.spind.composeapp.generated.resources.*
 import de.fabiexe.spind.data.PasswordGroup
 import de.fabiexe.spind.data.SecurityQuestion
 import de.fabiexe.spind.data.UnlockedVault
 import de.fabiexe.spind.hashSHA3256
+import de.fabiexe.spind.show
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -57,6 +59,7 @@ fun VaultSecurityDialog(
     vaultUsername: String? = null
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
+    val snackbarHostState = LocalSnackbarHostState.current
     val proposedQuestions = listOf(
         stringResource(Res.string.SecurityQuestion_GrandparentsHome),
         stringResource(Res.string.SecurityQuestion_PetsFirstName),
@@ -83,8 +86,7 @@ fun VaultSecurityDialog(
         if (state.vault != null) {
             val result = api.updateSecurity(state.vault, secretStr, state.securityQuestions)
             if (result != null) {
-                // TODO: Show error
-                println(result)
+                launch { result.show(snackbarHostState) }
                 state.processing = false
                 return@launch
             }
@@ -113,8 +115,7 @@ fun VaultSecurityDialog(
             onComplete(newUnlockedVault)
             onClose()
         } else {
-            // TODO: Show error
-            println(uploadResult)
+            launch { uploadResult.show(snackbarHostState) }
         }
         state.processing = false
     }

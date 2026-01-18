@@ -30,7 +30,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun PasswordEditView(
     password: Password?,
-    onChange: suspend (Password) -> Unit,
+    onChange: suspend CoroutineScope.(Password) -> Unit,
     close: () -> Unit
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
