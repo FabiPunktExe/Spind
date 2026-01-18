@@ -22,15 +22,31 @@ class AndroidStorage(val context: Context) : Storage {
         }
     }
 
-    override fun getCachedVaults(): List<Vault> {
-        TODO("Not yet implemented")
+    override fun getCachedVault(vault: Vault): ByteArray? {
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
+        val file = context.getDir("cache", Context.MODE_PRIVATE).resolve("$name.vault-data")
+        return if (file.exists()) {
+            file.readBytes()
+        } else {
+            null
+        }
     }
 
-    override fun getCachedVault(vault: Vault): ByteArray {
-        TODO("Not yet implemented")
+    override fun getCachedVaultRevision(vault: Vault): Long? {
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
+        val file = context.getDir("cache", Context.MODE_PRIVATE).resolve("$name.vault-rev")
+        return if (file.exists()) {
+            file.readText().toLongOrNull()
+        } else {
+            null
+        }
     }
 
-    override fun cacheVault(vault: Vault, data: ByteArray) {
-        TODO("Not yet implemented")
+    override fun cacheVault(vault: Vault, data: ByteArray, revision: Long) {
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
+        val dir = context.getDir("cache", Context.MODE_PRIVATE)
+        dir.mkdirs()
+        dir.resolve("$name.vault-data").writeBytes(data)
+        dir.resolve("$name.vault-rev").writeText(revision.toString())
     }
 }

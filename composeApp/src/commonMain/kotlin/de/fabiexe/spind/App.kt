@@ -31,7 +31,7 @@ class AppState {
 @Composable
 fun App(storage: Storage, httpClientEngineFactory: HttpClientEngineFactory<*>) {
     val state = remember { AppState() }
-    val api = remember { SpindApi(httpClientEngineFactory) }
+    val api = remember { SpindApi(httpClientEngineFactory, storage) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {

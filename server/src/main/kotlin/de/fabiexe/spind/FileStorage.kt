@@ -57,4 +57,19 @@ class FileStorage(val path: Path) : Storage {
             ?: SecurityInfoV1("", listOf(), null)
         writeSecurityInfoV1(vault, securityInfo.copy(backupSecret = backupSecret))
     }
+
+    override fun readRevision(vault: String): Long {
+        val path = this.path / "$vault.spind-rev"
+        return if (path.exists()) {
+            path.readText().toLongOrNull() ?: 0
+        } else {
+            0L
+        }
+    }
+
+    override fun writeRevision(vault: String, revision: Long) {
+        val path = this.path / "$vault.spind-rev"
+        path.createParentDirectories()
+        path.writeText(revision.toString())
+    }
 }

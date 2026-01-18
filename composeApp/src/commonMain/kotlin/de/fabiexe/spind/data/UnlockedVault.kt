@@ -15,4 +15,6 @@ data class UnlockedVault(
     fun sameAddressAndUsername(other: UnlockedVault): Boolean {
         return other.address == address && other.username == username
     }
+
+    fun toVault() = Vault(address, username, passwordHash)
 }

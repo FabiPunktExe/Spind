@@ -18,6 +18,16 @@ fun Routing.endpointsV1(storage: Storage) {
             if (storage.readSecret(principal.name) == null) {
                 throw ApiException(ApiError.VAULT_NOT_INITIALIZED)
             }
+
+            val serverRevision = storage.readRevision(principal.name)
+            call.response.etag(serverRevision.toString())
+
+            val clientRevision = call.request.queryParameters["revision"]?.toLongOrNull()
+            if (clientRevision != null && clientRevision >= serverRevision) {
+                call.respond(HttpStatusCode.NotModified)
+                return@get
+            }
+
             storage.read(principal.name).use { inputStream ->
                 call.respondOutputStream(status = HttpStatusCode.OK) {
                     inputStream.transferTo(this)
@@ -27,9 +37,12 @@ fun Routing.endpointsV1(storage: Storage) {
 
         put("/v1/vault") {
             val principal = call.principal<UserPasswordCredential>()!!
+            val revision = call.request.queryParameters["revision"]?.toLongOrNull()
+                ?: throw ApiException(ApiError.REVISION_PARAMETER_MISSING)
             storage.write(principal.name).use { outputStream ->
                 call.receiveStream().transferTo(outputStream)
             }
+            storage.writeRevision(principal.name, revision)
             call.respond(HttpStatusCode.OK)
         }
 

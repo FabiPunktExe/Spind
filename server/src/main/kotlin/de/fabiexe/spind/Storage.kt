@@ -13,4 +13,6 @@ interface Storage {
     fun writeSecurityQuestions(vault: String, questions: List<String>)
     fun readBackupSecret(vault: String): String?
     fun writeBackupSecret(vault: String, backupSecret: String?)
+    fun readRevision(vault: String): Long
+    fun writeRevision(vault: String, revision: Long)
 }

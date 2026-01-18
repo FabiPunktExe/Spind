@@ -22,7 +22,7 @@ import kotlinx.io.readByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
-class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
+class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>, private val storage: Storage) {
     @OptIn(ExperimentalSerializationApi::class)
     val httpClient = HttpClient(httpClientEngineFactory) {
         install(ContentNegotiation) {
@@ -37,19 +37,47 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
 
     suspend fun getVault(vault: Vault, secret: String): Either<ByteArray, ErrorResponse> {
         try {
+            val localRevision = storage.getCachedVaultRevision(vault)
             val response = httpClient.get("${vault.address}/v1/vault") {
                 basicAuth(vault.username, secret)
+                parameter("revision", localRevision)
             }
-            return if (response.status.isSuccess()) {
-                Either.Left(response.bodyAsBytes())
-            } else if (response.status == HttpStatusCode.PreconditionFailed) {
-                Either.Right(ErrorResponse(ApiError.VAULT_NOT_INITIALIZED))
-            } else {
-                Either.Right(response.body())
+
+            return when (response.status) {
+                HttpStatusCode.OK -> {
+                    // First time fetch or server has newer content
+                    val serverRevision = response.etag()?.toLongOrNull() ?: 0
+                    val data = response.bodyAsBytes()
+                    storage.cacheVault(vault, data, serverRevision)
+                    Either.Left(data)
+                }
+                HttpStatusCode.NotModified -> {
+                    // Server has same or older content
+                    val data = storage.getCachedVault(vault)
+                    if (data != null) {
+                        Either.Left(data)
+                    } else {
+                        Either.Right(ErrorResponse(ApiError.VAULT_NOT_INITIALIZED))
+                    }
+                }
+                HttpStatusCode.PreconditionFailed -> {
+                    // Vault not initialized
+                    Either.Right(ErrorResponse(ApiError.VAULT_NOT_INITIALIZED))
+                }
+                else -> {
+                    // Some other error
+                    Either.Right(response.body())
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return Either.Right(ErrorResponse(ApiError.NETWORK_ERROR))
+            // Fallback to cache if anything blew up
+            val data = storage.getCachedVault(vault)
+            return if (data != null) {
+                Either.Left(data)
+            } else {
+                Either.Right(ErrorResponse(ApiError.NETWORK_ERROR))
+            }
         }
     }
 
@@ -200,15 +228,19 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>) {
         return buffer.readByteArray()
     }
 
-    suspend fun uploadVault(vault: UnlockedVault): ErrorResponse? {
+    suspend fun uploadVault(unlockedVault: UnlockedVault): ErrorResponse? {
+        val vault = unlockedVault.toVault()
         try {
-            val data = encodeVault(vault)
-            val response = httpClient.put("${vault.address}/v1/vault") {
-                basicAuth(vault.username, vault.secret)
+            val revision = (storage.getCachedVaultRevision(vault) ?: 0) + 1
+            val data = encodeVault(unlockedVault)
+            val response = httpClient.put("${unlockedVault.address}/v1/vault") {
+                basicAuth(unlockedVault.username, unlockedVault.secret)
                 contentType(ContentType.Application.OctetStream)
+                parameter("revision", revision)
                 setBody(ByteArrayContent(data))
             }
             return if (response.status.isSuccess()) {
+                storage.cacheVault(vault, data, revision)
                 null
             } else {
                 response.body()
