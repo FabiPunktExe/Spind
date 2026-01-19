@@ -6,7 +6,11 @@ import kotlinx.serialization.json.Json
 import kotlin.io.path.*
 
 object JvmStorage : Storage {
-    val path = Path(System.getProperty("user.home"), ".spind")
+    val path = if (System.getProperty("os.name").contains("win", ignoreCase = true)) {
+        Path(System.getProperty("user.home"), "AppData", "Spind", "v1")
+    } else {
+        Path(System.getProperty("user.home"), ".spind", "v1")
+    }
 
     override fun getVaults(): List<Vault> {
         val path = this.path / "servers.json"
