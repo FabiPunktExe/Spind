@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: temurin
+      - name: Build (development)
+        run: .\gradlew composeApp:packageDistributionForCurrentOS --stacktrace
+      - name: Rename MSI file (development)
+        run: |
+          mv composeApp/build/compose/binaries/main/msi/Spind-*.msi composeApp/build/compose/binaries/main/msi/Spind.msi
+      - name: Upload GitHub release asset (development)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ github.ref_name }} composeApp/build/compose/binaries/main/msi/Spind.msi
