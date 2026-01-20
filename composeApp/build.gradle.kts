@@ -133,6 +133,12 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Spind"
             packageVersion = project.version.toString()
+
+            windows {
+                perUserInstall = false
+                menu = true
+                menuGroup = "Fabi.exe"
+            }
         }
     }
 }
