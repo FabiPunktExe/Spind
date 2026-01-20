@@ -1,7 +1,10 @@
 services:
   server:
-    build: server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     restart: always
+    working_dir: .
     volumes:
       - ${DATA_DIRECTORY}:/data
     ports:
