@@ -9,4 +9,5 @@ LABEL authors="Fabi.exe"
 COPY --from=builder /app/server/build/install/server /app
 VOLUME /data
 WORKDIR /data
+EXPOSE 8080
 ENTRYPOINT ["/app/bin/server"]
