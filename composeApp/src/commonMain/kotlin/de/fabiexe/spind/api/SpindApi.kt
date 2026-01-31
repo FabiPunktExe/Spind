@@ -252,8 +252,9 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>, private val 
     }
 
     suspend fun updateSecurity(
-        vault: UnlockedVault,
-        secret: String,
+        vault: Vault,
+        oldSecret: String,
+        newSecret: String,
         securityQuestions: List<SecurityQuestion>
     ): ErrorResponse? {
         try {
@@ -261,10 +262,10 @@ class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>, private val 
             val backupPasswordHash = hashSHA3256(backupPassword.encodeToByteArray())
             val backupSecret = hashSHA3256(backupPasswordHash)
             val response = httpClient.patch("${vault.address}/v1/vault/security") {
-                basicAuth(vault.username, vault.secret)
+                basicAuth(vault.username, oldSecret)
                 contentType(ContentType.Application.Json)
                 setBody(V1VaultSecurityRequest(
-                    secret,
+                    newSecret,
                     securityQuestions.map(SecurityQuestion::question),
                     backupSecret.toHexString()
                 ))

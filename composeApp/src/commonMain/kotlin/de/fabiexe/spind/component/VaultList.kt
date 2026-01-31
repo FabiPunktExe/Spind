@@ -76,7 +76,10 @@ fun VaultList(
                                             onChangeSelectedVault(index)
                                             val vault = vaults[index]
                                             val unlockedVault = unlockedVaults.first { it.sameAddressAndUsername(vault) }
-                                            state.vaultSecurityDialogState = VaultSecurityDialogState(unlockedVault)
+                                            state.vaultSecurityDialogState = VaultSecurityDialogState(
+                                                vault,
+                                                unlockedVault
+                                            )
                                             state.dialog = VaultListDialog.ChangePassword
                                         },
                                         modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)

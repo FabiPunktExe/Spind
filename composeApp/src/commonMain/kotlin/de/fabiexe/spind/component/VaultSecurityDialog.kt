@@ -25,6 +25,7 @@ import de.fabiexe.spind.composeapp.generated.resources.*
 import de.fabiexe.spind.data.PasswordGroup
 import de.fabiexe.spind.data.SecurityQuestion
 import de.fabiexe.spind.data.UnlockedVault
+import de.fabiexe.spind.data.Vault
 import de.fabiexe.spind.hashSHA3256
 import de.fabiexe.spind.show
 import kotlinx.coroutines.CoroutineScope
@@ -34,11 +35,11 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 @Stable
-class VaultSecurityDialogState(val vault: UnlockedVault? = null) {
+class VaultSecurityDialogState(val vault: Vault, val unlockedVault: UnlockedVault? = null) {
     var processing by mutableStateOf(false)
     var password by mutableStateOf("")
     var repeatedPassword by mutableStateOf("")
-    var securityQuestions by mutableStateOf(vault?.securityQuestions ?: listOf())
+    var securityQuestions by mutableStateOf(unlockedVault?.securityQuestions ?: listOf())
     val scrollState = ScrollState(0)
 
     fun isValid(): Boolean {
@@ -54,9 +55,7 @@ fun VaultSecurityDialog(
     api: SpindApi,
     state: VaultSecurityDialogState,
     onComplete: suspend (UnlockedVault) -> Unit,
-    onClose: () -> Unit,
-    vaultAddress: String? = null,
-    vaultUsername: String? = null
+    onClose: () -> Unit
 ) {
     val coroutineScope = remember { CoroutineScope(Dispatchers.Default) }
     val snackbarHostState = LocalSnackbarHostState.current
@@ -83,25 +82,28 @@ fun VaultSecurityDialog(
         val secretStr = secret.toHexString()
 
         // Update security stuff on server if vault exists
-        if (state.vault != null) {
-            val result = api.updateSecurity(state.vault, secretStr, state.securityQuestions)
-            if (result != null) {
-                launch { result.show(snackbarHostState) }
-                state.processing = false
-                return@launch
-            }
+        val result = api.updateSecurity(
+            state.vault,
+            state.unlockedVault?.secret ?: "",
+            secretStr,
+            state.securityQuestions
+        )
+        if (result != null) {
+            launch { result.show(snackbarHostState) }
+            state.processing = false
+            return@launch
         }
 
-        val newUnlockedVault = if (state.vault != null) {
-            state.vault.copy(
+        val newUnlockedVault = if (state.unlockedVault != null) {
+            state.unlockedVault.copy(
                 passwordHash = passwordHashStr,
                 secret = secretStr,
                 securityQuestions = state.securityQuestions.toList()
             )
         } else {
             UnlockedVault(
-                vaultAddress!!,
-                vaultUsername!!,
+                state.vault.address,
+                state.vault.username,
                 passwordHashStr,
                 secretStr,
                 PasswordGroup("", listOf(), listOf()),
@@ -135,7 +137,7 @@ fun VaultSecurityDialog(
                     modifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
                     enabled = state.isValid()
                 ) {
-                    if (state.vault == null) {
+                    if (state.unlockedVault == null) {
                         Text(stringResource(Res.string.VaultSecurityDialog_button_complete))
                     } else {
                         Text(stringResource(Res.string.VaultSecurityDialog_button_changePassword))
@@ -153,7 +155,7 @@ fun VaultSecurityDialog(
         },
         icon = { Icon(imageVector = Icons.Outlined.Lock, contentDescription = null) },
         title = {
-            if (state.vault == null) {
+            if (state.unlockedVault == null) {
                 Text(stringResource(Res.string.VaultSecurityDialog_title_setup))
             } else {
                 Text(stringResource(Res.string.VaultSecurityDialog_title_changePassword))

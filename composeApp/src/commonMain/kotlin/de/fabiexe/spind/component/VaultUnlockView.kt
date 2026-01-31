@@ -57,7 +57,7 @@ fun VaultUnlockView(
             is Either.Left -> onUnlock(result.value)
             is Either.Right -> {
                 if (result.value.error == ApiError.VAULT_NOT_INITIALIZED) {
-                    state.vaultSecurityDialogState = VaultSecurityDialogState(null)
+                    state.vaultSecurityDialogState = VaultSecurityDialogState(vault, null)
                 } else {
                     launch { result.show(snackbarHostState) }
                 }
@@ -125,9 +125,7 @@ fun VaultUnlockView(
             api = api,
             state = state.vaultSecurityDialogState!!,
             onComplete = onUnlock,
-            onClose = { state.vaultSecurityDialogState = null },
-            vaultAddress = vault.address,
-            vaultUsername = vault.username
+            onClose = { state.vaultSecurityDialogState = null }
         )
     } else if (state.vaultRecoveryDialogState != null) {
         VaultRecoveryDialog(
