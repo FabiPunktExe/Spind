@@ -28,7 +28,7 @@ object JvmStorage : Storage {
     }
 
     override fun getCachedVault(vault: Vault): ByteArray? {
-        val name = "${vault.address.replace("[^a-zA-Z0-9]+", "_")}_${vault.username}"
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
         val path = this.path / "cache" / "$name.vault-data"
         return if (path.exists()) {
             path.readBytes()
@@ -38,7 +38,7 @@ object JvmStorage : Storage {
     }
 
     override fun getCachedVaultRevision(vault: Vault): Long? {
-        val name = "${vault.address.replace("[^a-zA-Z0-9]+", "_")}_${vault.username}"
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
         val path = this.path / "cache" / "$name.vault-rev"
         return if (path.exists()) {
             path.readText().toLongOrNull()
@@ -48,7 +48,7 @@ object JvmStorage : Storage {
     }
 
     override fun cacheVault(vault: Vault, data: ByteArray, revision: Long) {
-        val name = "${vault.address.replace("[^a-zA-Z0-9]+", "_")}_${vault.username}"
+        val name = "${vault.address.replace("[^a-zA-Z0-9]+".toRegex(), "_")}_${vault.username}"
         val path = this.path / "cache"
         path.createDirectories()
         (path / "$name.vault-data").writeBytes(data)
