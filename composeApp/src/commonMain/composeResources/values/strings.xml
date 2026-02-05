@@ -29,7 +29,8 @@
     <string name="VaultSecurityDialog_button_complete">Complete</string>
     <string name="VaultSecurityDialog_button_changePassword">Change password</string>
     <string name="VaultSecurityDialog_button_cancel">Cancel</string>
-    <string name="PasswordsView_title">Your passwords</string>
+    <string name="PasswordList_title">Your passwords</string>
+    <string name="PasswordList_input_search">Search</string>
     <string name="PasswordView_title">Credentials for %1$s</string>
     <string name="PasswordView_button_copyPassword">Copy password</string>
     <string name="PasswordEditView_title_add">Add password</string>
