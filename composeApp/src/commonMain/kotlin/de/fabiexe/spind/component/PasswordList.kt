@@ -81,7 +81,7 @@ fun PasswordList(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(Res.string.PasswordList_input_search)) },
+            label = { Text(stringResource(Res.string.PasswordList_input_search)) },
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
