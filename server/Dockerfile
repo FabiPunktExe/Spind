@@ -1,10 +1,10 @@
-FROM eclipse-temurin:25.0.1_8-jdk-alpine AS builder
+FROM eclipse-temurin:25.0.2_10-jdk-alpine AS builder
 COPY . /app
 WORKDIR /app
 RUN chmod +x ./gradlew
 RUN ./gradlew server:installDist
 
-FROM eclipse-temurin:25.0.1_8-jre-alpine
+FROM eclipse-temurin:25.0.2_10-jre-alpine
 LABEL authors="Fabi.exe"
 COPY --from=builder /app/server/build/install/server /app
 VOLUME /data
