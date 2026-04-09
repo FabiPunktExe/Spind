@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25.0.1_8-jdk AS builder
+FROM eclipse-temurin:25.0.2_10-jdk AS builder
 COPY . /app
 WORKDIR /app
 RUN apt update
