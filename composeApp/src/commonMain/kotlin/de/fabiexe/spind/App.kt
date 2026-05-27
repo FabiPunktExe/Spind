@@ -29,9 +29,9 @@ class AppState {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun App(storage: Storage, httpClientEngineFactory: HttpClientEngineFactory<*>) {
+fun App(storage: Storage, ktorEngine: HttpClientEngineFactory<*>) {
     val state = remember { AppState() }
-    val api = remember { SpindApi(httpClientEngineFactory, storage) }
+    val api = remember { SpindApi(ktorEngine, storage) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {

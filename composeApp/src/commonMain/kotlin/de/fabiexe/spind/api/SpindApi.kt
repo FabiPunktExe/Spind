@@ -22,9 +22,9 @@ import kotlinx.io.readByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 
-class SpindApi(httpClientEngineFactory: HttpClientEngineFactory<*>, private val storage: Storage) {
+class SpindApi(ktorEngine: HttpClientEngineFactory<*>, private val storage: Storage) {
     @OptIn(ExperimentalSerializationApi::class)
-    val httpClient = HttpClient(httpClientEngineFactory) {
+    val httpClient = HttpClient(ktorEngine) {
         install(ContentNegotiation) {
             json()
             cbor()
