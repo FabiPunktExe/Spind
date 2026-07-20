@@ -1,92 +1,54 @@
-This is a Kotlin Multiplatform project targeting Android, Web, Desktop (JVM), Server.
+# Spind
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-    - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-      For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-      the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-      Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-      folder is the appropriate location.
+Spind is a Kotlin Multiplatform, zero-knowledge password manager. Clients (Android and JVM desktop) encrypt vaults locally and sync the opaque encrypted blob with a self-hosted Ktor server, which only ever stores a derived secret and the encrypted blob — it can never see the master password or plaintext data.
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+## Architecture
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+- `protocol` — shared Kotlin Multiplatform library of DTOs/models exchanged between client and server.
+- `app` — shared Compose Multiplatform client library: UI, Spind API client, and all client-side cryptography.
+- `jvm-app` — JVM desktop application wrapper (Compose Desktop).
+- `android-app` — Android application wrapper.
+- `server` — Ktor/Netty backend that stores the derived secret and the encrypted vault blob and verifies the BCrypt auth credential.
 
-### Build and Run Android Application
+## Security model
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
+The client derives a `secret` from the vault password using **cryptography-kotlin** (`secret = SHA3-256(vaultPassword)`), then BCrypt-hashes that secret (`hex(BCrypt.hash(secret))`, via `at.favre.lib:bcrypt`) to produce the Basic-Auth password it sends to the server. The vault payload (the passwords) is AES-GCM-encrypted (cryptography-kotlin) with a key derived from the vault password via PBKDF2, so the server only ever sees the BCrypt credential and the encrypted blob — never the plaintext or the encryption key. On the first `PUT /v1/vault?new-secret=<secretHex>` the server registers the vault's secret; afterwards it stores only updates to the encrypted blob.
 
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
+### Encryption flow
 
-### Build and Run Desktop (JVM) Application
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>C: secret = SHA3-256(vaultPassword)
+    C->>C: authPwd = hex(BCrypt.hash(secret))
+    C->>C: key = PBKDF2(vaultPassword)
+    C->>C: blob = AES-GCM-encrypt(key, passwords)
+    C->>S: PUT /v1/vault?new-secret=secretHex<br/>(Basic-Auth: vaultName, authPwd) body=blob
+    S->>S: store secretHex + blob<br/>(BCrypt-verify authPwd on later calls)
+    S-->>C: 200 OK
+```
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
+### Decryption flow
 
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: GET /v1/vault (Basic-Auth: vaultName, authPwd)
+    S->>S: BCrypt-verify authPwd against stored hash
+    S-->>C: 200 OK, body = encrypted blob
+    C->>C: key = PBKDF2(vaultPassword)
+    C->>C: passwords = AES-GCM-decrypt(key, blob)
+```
 
-### Build and Run Server
+## Build
 
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
+Spind uses **Amper / Kotlin CLI** via the `./kotlin` wrapper at the repo root (`kotlin` on Unix, `kotlin.bat` on Windows) — there is no `gradlew`. See [CONTEXT.md](./CONTEXT.md) for the full command reference. Quick start:
 
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
-
-### Build and Run Web Application
-
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE's toolbar or run it directly from the terminal:
-
-- for the Wasm target (faster, modern browsers):
-    - on macOS/Linux
-      ```shell
-      ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-      ```
-    - on Windows
-      ```shell
-      .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-      ```
-- for the JS target (slower, supports older browsers):
-    - on macOS/Linux
-      ```shell
-      ./gradlew :composeApp:jsBrowserDevelopmentRun
-      ```
-    - on Windows
-      ```shell
-      .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
-      ```
-
----
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
-
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack
-channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+```shell
+./kotlin show tasks            # list all tasks
+./kotlin task :server:runJvm         # run the server (default port 8080)
+./kotlin task :jvm-app:runJvm        # run the desktop client
+./kotlin task :android-app:buildAndroidDebug   # build the Android client
+```
