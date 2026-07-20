@@ -1,0 +1,15 @@
+[versions]
+compose-material3-adaptive = "1.2.0"
+log4j = "2.20.0"
+bcrypt = "0.10.2"
+cryptographyKotlin = "0.6.0"
+materialKolor = "5.0.0-alpha04"
+
+[libraries]
+compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "compose-material3-adaptive" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+log4j-slf4j = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+cryptographyKotlin-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptographyKotlin" }
+cryptographyKotlin-providerOptimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptographyKotlin" }
+materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }

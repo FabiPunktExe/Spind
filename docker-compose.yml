@@ -11,7 +11,7 @@ services:
   web-client:
     build:
       context: .
-      dockerfile: composeApp/Dockerfile
+      dockerfile: app/Dockerfile
     restart: always
     ports:
       - "${SPIND_WEB_CLIENT_PORT}:80"

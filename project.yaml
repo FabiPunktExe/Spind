@@ -1,0 +1,6 @@
+modules:
+  - android-app
+  - app
+  - jvm-app
+  - protocol
+  - server

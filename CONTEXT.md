@@ -4,14 +4,14 @@ Spind is a Kotlin Multiplatform (KMP) password manager that synchronizes encrypt
 
 ## Project Structure
 The project is divided into three main modules:
-- `composeApp`: The client application built with Compose Multiplatform.
+- `app`: The client application built with Compose Multiplatform.
   - `commonMain`: Shared UI and logic across all client platforms.
   - `androidMain`, `jvmMain`, `webMain`, `wasmJsMain`, `jsMain`: Platform-specific implementations (e.g., storage, platform-specific APIs).
 - `server`: A Ktor-based backend server for storing and serving encrypted vaults.
   - Uses a simple file-based storage system.
   - Supports basic authentication for vault access.
-- `shared`: Code shared between both the `composeApp` and the `server`.
-  - Contains data models, common error types (`ApiError`), and utility classes (`Either`).
+- `protocol`: Code shared between both the `app` and the `server`.
+  - Contains data models, common error types (`ServerError`), and utility classes (`Either`).
 
 ## Tech Stack
 - Languages: Kotlin (Multiplatform)
@@ -68,8 +68,8 @@ Use `.\gradlew.bat` on Windows or `./gradlew` on Unix-based systems.
 - Environment variables: `SPIND_PORT` (default: 8080)
 
 ## Development Guidelines
-- Shared Logic: Prefer putting logic in `shared` if it's used by both client and server.
-- UI Components: Place reusable Compose components in `composeApp/src/commonMain/kotlin/de/fabiexe/spind/component`.
-- Data Models: Defined in `composeApp/src/commonMain/kotlin/de/fabiexe/spind/data` for client-side and `shared` for common ones.
+- Shared Logic: Prefer putting logic in `protocol` if it's used by both client and server.
+- UI Components: Place reusable Compose components in `app/src/commonMain/kotlin/de/fabiexe/spind/component`.
+- Data Models: Defined in `app/src/commonMain/kotlin/de/fabiexe/spind/data` for client-side and `protocol` for common ones.
 - Platform-Specifics: Use the `expect`/`actual` pattern or interfaces with platform-specific implementations (e.g., `Storage` interface).
 - Style: Follow standard Kotlin coding conventions. Maintain consistency with the existing codebase (e.g., use of `Material3`).

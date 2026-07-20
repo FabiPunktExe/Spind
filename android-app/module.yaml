@@ -1,0 +1,10 @@
+product: android/app
+
+dependencies:
+  - ../app
+  #- $libs.androidx.activity.compose
+
+settings:
+  compose: enabled
+  android:
+    namespace: de.fabiexe.spind.app

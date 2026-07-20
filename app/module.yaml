@@ -1,0 +1,29 @@
+product:
+  type: kmp/lib
+  platforms: [ jvm, android ]
+
+dependencies:
+  - ../protocol
+  - $compose.material3
+  - $ktor.serialization.kotlinx.json
+  - $ktor.client.core
+  - $ktor.client.contentNegotiation
+  - $ktor.client.encoding
+  - $libs.compose.material3.adaptive
+  - $libs.cryptographyKotlin.core
+  - $libs.cryptographyKotlin.providerOptimal
+  - $libs.materialKolor
+
+#dependencies@jvm:
+  #- $libs.kotlinx.coroutines.swing
+  #- $ktor.client.java
+
+#dependencies@android:
+  #- $androidx.activity.compose
+  #- $ktor.client.android
+
+settings:
+  kotlin:
+    serialization: enabled
+  compose: enabled
+  ktor: enabled
