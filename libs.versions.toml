@@ -1,6 +1,6 @@
 [versions]
 compose-material3-adaptive = "1.2.0"
-log4j = "2.20.0"
+log4j = "2.26.1"
 bcrypt = "0.10.2"
 cryptographyKotlin = "0.6.0"
 materialKolor = "5.0.0-alpha04"
