@@ -3,7 +3,7 @@ compose-material3-adaptive = "1.2.0"
 log4j = "2.20.0"
 bcrypt = "0.10.2"
 cryptographyKotlin = "0.6.0"
-materialKolor = "5.0.0-alpha04"
+materialKolor = "5.0.0"
 
 [libraries]
 compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "compose-material3-adaptive" }
